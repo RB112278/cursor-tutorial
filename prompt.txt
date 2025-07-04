@@ -1,0 +1,16 @@
+Create a simple browser-based 2D platformer game similar to Super Mario Bros using Kaboom.js.
+
+Project details:
+- Use plain JavaScript with Kaboom.js.
+- The game should have a player character that can move left/right and jump.
+- Add gravity so the player falls naturally and lands on platforms.
+- Include platforms (like ground and floating blocks).
+- The goal is to reach the right side of the level.
+- Add one collectible item (like a coin or mushroom) and a message when the player touches it.
+
+File structure:
+1. index.html — basic HTML with a canvas and Kaboom script included.
+2. style.css — optional minimal styling (can be mostly empty).
+3. main.js — all the game logic using Kaboom.js.
+
+Write all the code needed to make this playable in the browser. Keep the code clean and well-commented for a beginner.
