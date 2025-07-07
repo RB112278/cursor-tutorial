@@ -9,6 +9,8 @@ kaboom({
 loadSprite("player", "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjRkY2QjNCIi8+CjxyZWN0IHg9IjQiIHk9IjQiIHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiMzMzMiLz4KPHJlY3QgeD0iMjAiIHk9IjQiIHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiMzMzMiLz4KPHJlY3QgeD0iMTIiIHk9IjE2IiB3aWR0aD0iOCIgaGVpZ2h0PSI0IiBmaWxsPSIjMzMzIi8+Cjwvc3ZnPgo=");
 loadSprite("platform", "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCA2NCAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjMyIiBmaWxsPSIjOEI1NzNBIi8+CjxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSI0IiBmaWxsPSIjNkE0QzJDIi8+Cjwvc3ZnPgo=");
 loadSprite("coin", "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIGZpbGw9IiNGRkQ3MDAiLz4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iNiIgZmlsbD0iI0ZGRDcwMCIgc3Ryb2tlPSIjRkZDNzAwIiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+Cg==");
+// Enemy sprite (red square)
+loadSprite("enemy", "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjRkY0NDQ0Ii8+Cjwvc3ZnPgo=");
 
 // Game scene
 scene("game", () => {
@@ -23,7 +25,7 @@ scene("game", () => {
         body(),
         {
             speed: 200,
-            myJumpForce: 400,
+            myJumpForce: 500,
             canJump: true
         }
     ]);
@@ -91,6 +93,73 @@ scene("game", () => {
         area(),
         "coin"
     ]);
+    
+    // --- ENEMIES ---
+    // Add enemies on platforms
+    function createEnemy(x, y, leftBound, rightBound) {
+        const enemy = add([
+            sprite("enemy"),
+            pos(x, y),
+            area(),
+            body(),
+            "enemy",
+            { dir: 1, speed: 60, leftBound, rightBound }
+        ]);
+        enemy.onUpdate(() => {
+            enemy.move(enemy.speed * enemy.dir, 0);
+            // Reverse direction at bounds
+            if (enemy.pos.x < enemy.leftBound) {
+                enemy.dir = 1;
+                enemy.pos.x = enemy.leftBound;
+            } else if (enemy.pos.x > enemy.rightBound) {
+                enemy.dir = -1;
+                enemy.pos.x = enemy.rightBound;
+            }
+        });
+        return enemy;
+    }
+    // Place enemies on platforms with patrol bounds
+    createEnemy(250, 410, 200, 350); // first floating platform
+    createEnemy(450, 310, 400, 550); // second floating platform
+    createEnemy(650, 210, 600, 750); // third floating platform
+
+    // --- ENEMY COLLISION LOGIC ---
+    player.onUpdate(() => {
+        get("enemy").forEach((enemy) => {
+            if (enemy.isDead) return;
+            const playerHeight = player.height ?? 32;
+            const enemyHeight = enemy.height ?? 24;
+            const playerBottom = player.pos.y + playerHeight;
+            const enemyTop = enemy.pos.y;
+
+            // Debug output
+            if (player.isColliding(enemy)) {
+                console.log(
+                    "Collision detected:",
+                    "player.vel.y:", player.vel.y,
+                    "playerBottom:", playerBottom,
+                    "enemyTop:", enemyTop,
+                    "enemyHeight:", enemyHeight
+                );
+            }
+
+            if (
+                player.isColliding(enemy) &&
+                player.vel.y >= 0
+            ) {
+                console.log("Stomped enemy!");
+                enemy.isDead = true;
+                destroy(enemy);
+                add([
+                    text("Enemy smashed!", { size: 28, font: "arial" }),
+                    pos(enemy.pos.x, enemy.pos.y - 30),
+                    color(255, 0, 0),
+                    lifespan(1.2)
+                ]);
+                player.jump(player.myJumpForce * 0.7);
+            }
+        });
+    });
     
     // Coin collection logic
     player.onCollide("coin", (coin) => {
